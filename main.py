@@ -35,3 +35,23 @@ def add_data(parameter: str, value: float, unit: str):
     )
     conn.commit()
     return {"status": "ok", "parameter": parameter, "value": value}
+@app.get("/data")
+def read_data():
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
+    cur.execute("SELECT id, parameter, value, unit, timestamp FROM health_data ORDER BY timestamp DESC;")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    data = [
+        {
+            "id": row[0],
+            "parameter": row[1],
+            "value": row[2],
+            "unit": row[3],
+            "timestamp": row[4].isoformat()
+        }
+        for row in rows
+    ]
+    return {"data": data}
