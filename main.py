@@ -37,14 +37,35 @@ def add_data(parameter: str, value: float, unit: str):
     )
     conn.commit()
     return {"status": "ok", "parameter": parameter, "value": value}
-
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     client = storage.Client.from_service_account_info(
         json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
     )
-    bucket = client.bucket("health-ai-valce-file")  # заменишь на имя своего бакета!
+    bucket = client.bucket("health-ai-valce-file")  # Замени на имя своего ведра!
     contents = await file.read()
     blob = bucket.blob(file.filename)
     blob.upload_from_string(contents)
     return {"status": "ok", "filename": file.filename}
+
+
+@app.get("/data")
+def read_data():
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
+    cur.execute("SELECT id, parameter, value, unit, timestamp FROM health_data ORDER BY timestamp DESC;")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    data = [
+        {
+            "id": row[0],
+            "parameter": row[1],
+            "value": row[2],
+            "unit": row[3],
+            "timestamp": row[4].isoformat()
+        }
+        for row in rows
+    ]
+    return {"data": data}
