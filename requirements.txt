@@ -1,3 +1,6 @@
-fastapi
-uvicorn
+fastapi 
+uvicorn[standard)
 psycopg2-binary
+openai
+google-cloud-storage
+google-auth
