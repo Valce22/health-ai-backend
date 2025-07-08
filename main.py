@@ -68,4 +68,4 @@ def read_data():
         }
         for row in rows
     ]
-    return {"data": data}
+    return {"data": data}    #Trigger redeploy: add comment
