@@ -38,9 +38,9 @@ def add_data(parameter: str, value: float, unit: str):
     conn.commit()
     return {"status": "ok", "parameter": parameter, "value": value}
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...):
     client = storage.Client.from_service_account_info(
-        json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON")
+        json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
     )              
     bucket = client.bucket("health-ai-valce-file")  # Замени на имя своего ведра!
     contents = await file.read()
