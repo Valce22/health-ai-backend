@@ -16,25 +16,36 @@ def read_root():
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
-        # Загружаем JSON из переменной окружения
+        # 1. Проверяем, загрузилась ли переменная окружения
         credentials_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
         if not credentials_json:
             raise HTTPException(status_code=500, detail="GOOGLE_CREDENTIALS_JSON not found in environment variables")
+        print("GOOGLE_CREDENTIALS_JSON:", credentials_json[:100])  # первые 100 символов
 
-        # Декодируем JSON
-        credentials_dict = json.loads(credentials_json)
+        # 2. Пробуем декодировать JSON
+        try:
+            credentials_dict = json.loads(credentials_json)
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=500, detail=f"Ошибка декодирования JSON: {str(e)}")
 
-        # Инициализируем клиента Google Cloud Storage
-        client = storage.Client.from_service_account_info(credentials_dict)
+        # 3. Проверяем переменную BUCKET
         bucket_name = os.getenv("GCS_BUCKET_NAME")
         if not bucket_name:
             raise HTTPException(status_code=500, detail="GCS_BUCKET_NAME not found in environment variables")
+        print("BUCKET_NAME:", bucket_name)
 
+        # 4. Инициализируем клиента и бакет
+        client = storage.Client.from_service_account_info(credentials_dict)
         bucket = client.bucket(bucket_name)
         blob = bucket.blob(file.filename)
 
-        # Загружаем содержимое файла
+        # 5. Читаем содержимое файла
         contents = await file.read()
+        if not contents:
+            raise HTTPException(status_code=400, detail="Пустой файл или ошибка чтения содержимого")
+        print(f"Загружается файл: {file.filename}, размер: {len(contents)} байт")
+
+        # 6. Загружаем в Google Cloud
         blob.upload_from_string(contents, content_type=file.content_type)
 
         return {"filename": file.filename, "message": "File uploaded successfully."}
